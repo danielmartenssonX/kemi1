@@ -13,18 +13,18 @@
 :root{
   --bg:#F5F6F4; --card:#FFFFFF; --fg:#1E2327; --mute:#5E6A72; --line:#D5DAD8;
   --accent:#B5602E; --accent-ink:#FFFFFF; --ok:#1E7A4C; --ok-bg:#E4F2EA; --bad:#B8322C; --bad-bg:#F9E6E4;
-  --lock:#EEF0EE; --tint:#EEF3F1;
+  --lock:#EEF0EE; --tint:#EEF3F1; --bronze:#A8693A; --silver:#8A949B; --gold:#C29A1E;
   --display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
   --body:"Source Sans 3",-apple-system,"Segoe UI",Roboto,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#171B1E; --card:#21262A; --fg:#ECEFEA; --mute:#9BA6AC; --line:#38414A;
   --accent:#D98C5A; --accent-ink:#1A1410; --ok:#6CCB95; --ok-bg:#1E3A2C; --bad:#F08A84; --bad-bg:#432422;
-  --lock:#1C2124; --tint:#262D31; color-scheme:dark}}
+  --lock:#1C2124; --tint:#262D31; --bronze:#CD8A55; --silver:#B9C2C8; --gold:#E8C547; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#171B1E; --card:#21262A; --fg:#ECEFEA; --mute:#9BA6AC; --line:#38414A;
   --accent:#D98C5A; --accent-ink:#1A1410; --ok:#6CCB95; --ok-bg:#1E3A2C; --bad:#F08A84; --bad-bg:#432422;
-  --lock:#1C2124; --tint:#262D31; color-scheme:dark}
+  --lock:#1C2124; --tint:#262D31; --bronze:#CD8A55; --silver:#B9C2C8; --gold:#E8C547; color-scheme:dark}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:18px;line-height:1.5;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:8px 40px}
@@ -82,7 +82,28 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .link{color:var(--accent);font-weight:600;text-decoration:underline}
 .code{font:inherit;font-size:22px;letter-spacing:.3em;padding:10px 14px;width:9ch;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--fg)}
 .code:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.center{text-align:center}.row.center{justify-content:center}
+.stat3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.stat3 div{padding:8px 10px;border-radius:10px;background:var(--tint)}
+.stat3 b{display:block;font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums}
+.stat3 small{color:var(--mute);font-size:13px}
+.coll{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}
+.el{position:relative;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;padding:4px;border-radius:10px;border:2px solid var(--line);background:var(--card);line-height:1.1}
+.el small{position:absolute;top:3px;left:6px;font-size:11px;color:var(--mute)}
+.el b{font-family:var(--display);font-size:24px}
+.el span{font-size:10px;color:var(--mute);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.el.off{background:var(--lock);color:var(--mute);border-style:dashed}
+.el.t1{border-color:var(--bronze);background:color-mix(in srgb,var(--bronze) 10%,var(--card))}
+.el.t2{border-color:var(--silver);background:color-mix(in srgb,var(--silver) 14%,var(--card))}
+.el.t3{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 18%,var(--card));box-shadow:0 0 0 2px color-mix(in srgb,var(--gold) 35%,transparent)}
+.el.big{width:140px;margin:16px auto 6px;border-width:3px;border-radius:16px}
+.el.big b{font-size:52px}.el.big span{font-size:15px}.el.big small{font-size:14px;top:6px;left:10px}
+.stars{color:var(--gold);font-size:24px;letter-spacing:.12em}
+.gain{font-family:var(--display);font-weight:700;color:var(--accent);margin-top:6px}
+.fact{background:var(--tint);border-radius:10px;padding:12px 14px;margin:12px 0;text-align:left}
+.reveal{animation:pop .7s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes pop{from{transform:scale(.3) rotate(-14deg);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
@@ -92,7 +113,8 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 const D=JSON.parse(document.getElementById('data').textContent);
 const AREAS=D.areas, QS=D.q, FS=D.f;
 const KEY='kemiprovet-v1';
-let S={done:[],score:{},wrong:[],free:false,seen:{}};
+const fresh=()=>({done:[],score:{},wrong:[],free:false,seen:{},xp:0,bestStreak:0,master:false});
+let S=fresh();
 try{const s=localStorage.getItem(KEY);if(s)S=Object.assign(S,JSON.parse(s));}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 const app=document.getElementById('app');
@@ -104,24 +126,69 @@ function allDone(){return AREAS.every(a=>S.done.includes(a.id))}
 function addWrong(k){if(!S.wrong.includes(k))S.wrong.push(k);save()}
 function remWrong(k){S.wrong=S.wrong.filter(x=>x!==k);save()}
 
+/* ---------- Nivåer och belöningar ----------
+   En nivå per klarat område (minst 70 % rätt); Kemimästare kräver 90 % på slutprovet.
+   Belöningarna följer kunskapen: XP bara för rätta svar, svitbonus, bonus för rättade fel,
+   och ett grundämneskort per område vars fakta fördjupar området. Bättre resultat ger bättre kort. */
+const PASS=0.7, MASTER=0.9;
+const RANKS=['Rookie','Labbpraktikant','Provrörsskakare','Atomspanare','Elektronjonglör','Jonjägare','Bindningsbyggare','Labbveteran','Kemiexpert','Kemiprofessor','Kemimästare'];
+const TIER=['','brons','silver','guld'], TIERCAP=['','Brons','Silver','Guld'];
+const CARDS={
+  1:{sym:'H',name:'Väte',nr:1,fact:'Väte är det vanligaste grundämnet i universum. Atomen har bara en proton och en elektron, den enklaste atom som finns.'},
+  2:{sym:'C',name:'Kol',nr:6,fact:'Kol-14 är en radioaktiv isotop som sakta sönderfaller. Därför kan man räkna ut åldern på fynd av trä och ben som är upp till cirka 50 000 år gamla.'},
+  3:{sym:'Na',name:'Natrium',nr:11,fact:'Natrium har en enda valenselektron och lämnar den så gärna att metallen förvaras i olja. I kontakt med vatten reagerar den häftigt.'},
+  4:{sym:'He',name:'Helium',nr:2,fact:'Helium upptäcktes i solens ljus 1868, innan någon hade hittat det på jorden. Namnet kommer av grekiskans helios, sol.'},
+  5:{sym:'Cl',name:'Klor',nr:17,fact:'Klorgas, Cl₂, är giftig. Som kloridjon, Cl⁻, i bordssalt behöver kroppen den. Samma grundämne, helt olika egenskaper som atom och som jon.'},
+  6:{sym:'O',name:'Syre',nr:8,fact:'Syre är det vanligaste grundämnet i jordskorpan. I varje vattenmolekyl delar en syreatom elektronpar med två väteatomer: kovalent bindning.'},
+  7:{sym:'Cu',name:'Koppar',nr:29,fact:'Bara silver leder elektricitet bättre än koppar. Koppar är billigare och används därför i nästan alla elkablar.'},
+  8:{sym:'Fe',name:'Järn',nr:26,fact:'Rost tar mer plats än järnet den bildas av. Därför kan rostande armeringsjärn spräcka betongen runt omkring.'},
+  9:{sym:'Ti',name:'Titan',nr:22,fact:'Titan är lätt, starkt och korroderar inte. Därför används det i flygplan och i konstgjorda höftleder.'},
+  10:{sym:'Au',name:'Guld',nr:79,fact:'Guld reagerar nästan inte alls med syre. Därför glänser guldsmycken som är flera tusen år gamla fortfarande.'}
+};
+function passed(id){return S.done.includes(id)}
+function stars(id){const s=S.score[id];if(!passed(id))return 0;if(!s)return 1;const p=s[0]/s[1];return p===1?3:p>=0.9?2:1}
+function rankIdx(){return S.master?10:Math.min(S.done.length,9)}
+function totalStars(){return AREAS.reduce((n,a)=>n+stars(a.id),0)}
+function starStr(n){return '★'.repeat(n)+'☆'.repeat(3-n)}
+function addXp(n){S.xp=(S.xp||0)+n;save()}
+function xpFor(streak){return 10+2*Math.min(streak-1,5)}
+function noteStreak(s){if(s>(S.bestStreak||0)){S.bestStreak=s;save()}}
+function card(id,big){
+  const c=CARDS[id], st=id===10?(S.master?3:0):stars(id), tag=big?'div':'button';
+  if(!st)return `<${tag} class="el off${big?' big':''}" ${big?'':'disabled'} aria-label="Låst kort"><b>?</b><span>Låst</span></${tag}>`;
+  return `<${tag} class="el t${st}${big?' big':''}" ${big?'':`onclick="showCard(${id})"`} aria-label="${TIERCAP[st]}kort ${c.name}"><small>${c.nr}</small><b>${c.sym}</b><span>${c.name}</span></${tag}>`;
+}
+function showCard(id){
+  const c=CARDS[id], st=id===10?3:stars(id), a=AREAS.find(x=>x.id===id);
+  app.innerHTML=`<div class="top"><button class="back" onclick="home()">‹ Hem</button></div><div class="card center">
+  <div class="eyebrow">${id===10?'Mästarkortet':TIERCAP[st]+'kort · '+esc(a.short)}</div>${card(id,true)}${id===10?'':`<div class="stars">${starStr(st)}</div>`}
+  <div class="fact"><b>${c.name} (${c.sym}), atomnummer ${c.nr}.</b> ${c.fact}</div>
+  <div class="row center">${id!==10&&st<3?`<button class="btn" onclick="quiz(${id})">Satsa på ${TIER[st+1]}</button>`:''}<button class="btn ghost" onclick="home()">Tillbaka</button></div></div>`;
+  window.scrollTo(0,0);
+}
+
 /* ---------- Hem ---------- */
 function home(){
-  const n=S.done.length, pct=Math.round(100*n/AREAS.length);
+  const r=rankIdx();
+  const nextTxt=r<9?`Klara ett område till för att bli ${RANKS[r+1]}.`:r===9?'Minst 90 % på slutprovet gör dig till Kemimästare.':'Högsta nivån. Du kan det här!';
   let h=`<div class="top"><div><div class="eyebrow">Kemi · Materiens uppbyggnad</div><h1>Kemiprovet</h1></div></div>
-  <div class="card"><div class="eyebrow">Så funkar det</div>
-  <p style="margin:6px 0 0">Läs ett område, svara på frågorna, lås upp nästa. När alla nio är klara får du en sammanfattning och ett slutprov med nya frågor.</p>
-  <div class="prog"><i style="width:${pct}%"></i></div><div class="tiny">${n} av ${AREAS.length} områden klara</div></div>
+  <div class="card"><div class="eyebrow">Nivå ${r} av 10</div><h2 style="margin-top:4px">${RANKS[r]}</h2>
+  <div class="prog"><i style="width:${r*10}%"></i></div><div class="tiny">${nextTxt}</div>
+  <div class="stat3"><div><b>${S.xp||0}</b><small>XP</small></div><div><b>${totalStars()}/${AREAS.length*3}</b><small>stjärnor</small></div><div><b>${S.bestStreak||0}</b><small>bästa svit</small></div></div></div>
+  <div class="card" style="margin-top:10px"><div class="eyebrow">Din samling</div>
+  <div class="coll">${Object.keys(CARDS).map(k=>card(+k)).join('')}</div>
+  <p class="tiny" style="margin:10px 0 0">Klara ett område med minst 70 % rätt: du går upp en nivå och vinner ett grundämneskort. Bättre resultat ger bättre kort: brons, silver (minst 90 %) och guld (alla rätt).</p></div>
   <div class="list">`;
   AREAS.forEach(a=>{
-    const done=S.done.includes(a.id), open=unlocked(a.id), sc=S.score[a.id];
-    const st=done?`<span class="pill ok">${sc?sc[0]+'/'+sc[1]:'Klar'}</span>`:open?`<span class="pill">Läs</span>`:`<span class="pill">Låst</span>`;
+    const done=passed(a.id), open=unlocked(a.id), sc=S.score[a.id];
+    const st=done?`<span class="pill ok">${starStr(stars(a.id))}</span>`:open?`<span class="pill">${sc?sc[0]+'/'+sc[1]:'Läs'}</span>`:`<span class="pill">Låst</span>`;
     h+=`<button class="area ${open?'':'locked'}" ${open?`onclick="area(${a.id})"`:'disabled'}><span class="num">${a.id}</span><span><span class="t">${esc(a.title)}</span><br><span class="s">${QS.filter(q=>q.a===a.id).length} kontrollfrågor</span></span>${st}</button>`;
   });
   const ad=allDone();
   h+=`</div><div class="list" style="margin-top:18px">
   <button class="area ${ad?'':'locked'}" ${ad?'onclick="summary()"':'disabled'}><span class="num">∑</span><span><span class="t">Sammanfattning</span><br><span class="s">Hela materialet på en sida</span></span><span class="pill">${ad?'Läs':'Låst'}</span></button>
-  <button class="area ${ad?'':'locked'}" ${ad?'onclick="examStart()"':'disabled'}><span class="num">★</span><span><span class="t">Slutprov</span><br><span class="s">${FS.length} nya frågor, blandade</span></span><span class="pill">${S.exam?S.exam.right+'/'+S.exam.total:(ad?'Starta':'Låst')}</span></button>
-  <button class="area ${S.wrong.length?'':'locked'}" ${S.wrong.length?'onclick="repeat()"':'disabled'}><span class="num">↻</span><span><span class="t">Repetera fel</span><br><span class="s">Frågor du svarat fel på</span></span><span class="pill">${S.wrong.length}</span></button>
+  <button class="area ${ad?'':'locked'}" ${ad?'onclick="examStart()"':'disabled'}><span class="num">★</span><span><span class="t">Slutprov</span><br><span class="s">${FS.length} nya frågor · 90 % ger Kemimästare</span></span><span class="pill ${S.master?'ok':''}">${S.exam?S.exam.right+'/'+S.exam.total:(ad?'Starta':'Låst')}</span></button>
+  <button class="area ${S.wrong.length?'':'locked'}" ${S.wrong.length?'onclick="repeat()"':'disabled'}><span class="num">↻</span><span><span class="t">Repetera fel</span><br><span class="s">+15 XP för varje fel du rättar</span></span><span class="pill">${S.wrong.length}</span></button>
   </div>
   <p class="tiny" style="margin-top:22px">${S.free?'Fri ordning är på. ':'Områdena låses upp i ordning. '}<button class="link" onclick="${S.free?'S.free=false;save();home()':'unlockAll()'}">${S.free?'Lås i ordning':'Lås upp alla'}</button> · <button class="link" onclick="resetAll()">Börja om</button></p>`;
   app.innerHTML=h; window.scrollTo(0,0);
@@ -137,7 +204,7 @@ function unlockAll(){
     else{document.getElementById('ue').innerHTML='<div class="fb bad">Fel kod. Försök igen.</div>';inp.value='';inp.focus()}};
 }
 function resetAll(){
-  app.innerHTML=`<div class="top"><button class="back" onclick="home()">‹ Tillbaka</button></div><div class="card"><h2>Börja om från början?</h2><p>Alla resultat och fel-listan raderas.</p><div class="row"><button class="btn" onclick="S={done:[],score:{},wrong:[],free:false,seen:{}};save();home()">Ja, börja om</button><button class="btn ghost" onclick="home()">Avbryt</button></div></div>`;
+  app.innerHTML=`<div class="top"><button class="back" onclick="home()">‹ Tillbaka</button></div><div class="card"><h2>Börja om från början?</h2><p>Alla resultat, nivåer, kort, XP och fel-listan raderas.</p><div class="row"><button class="btn" onclick="S=fresh();save();home()">Ja, börja om</button><button class="btn ghost" onclick="home()">Avbryt</button></div></div>`;
 }
 
 /* ---------- Område: text + kontrollfrågor ---------- */
@@ -146,34 +213,49 @@ function area(id){
   app.innerHTML=`<div class="top"><button class="back" onclick="home()">‹ Hem</button><span class="eyebrow">Område ${id} av ${AREAS.length}</span></div>
   <h2>${esc(a.title)}</h2><div class="read" style="margin-top:10px">${a.text}</div>
   <div class="row"><button class="btn" onclick="quiz(${id})">Till kontrollfrågorna →</button></div>
-  <p class="tiny">Läs texten först. Frågorna ställs en i taget och du får svar direkt.</p>`;
+  <p class="tiny">Läs texten först. Frågorna ställs en i taget och du får svar direkt. Rätt svar i rad ger svitbonus.</p>`;
   window.scrollTo(0,0);
 }
 function quiz(id){
-  const qs=shuffle(QS.filter(q=>q.a===id)); let i=0, right=0;
+  const qs=shuffle(QS.filter(q=>q.a===id)); let i=0, right=0, streak=0;
   function show(){
     const q=qs[i], opts=shuffle([q.c,...q.w]); const L='ABCD';
-    app.innerHTML=`<div class="top"><button class="back" onclick="area(${id})">‹ Texten</button><span class="eyebrow">Fråga ${i+1} av ${qs.length}</span></div>
+    app.innerHTML=`<div class="top"><button class="back" onclick="area(${id})">‹ Texten</button><span class="eyebrow">Fråga ${i+1} av ${qs.length}${streak>=2?' · Svit '+streak:''}</span></div>
     <div class="prog"><i style="width:${Math.round(100*i/qs.length)}%"></i></div>
     <p class="qtext">${esc(q.q)}</p><div class="opts" id="opts">${opts.map((o,j)=>`<button class="opt" data-o="${esc(o)}"><b>${L[j]}</b><span>${esc(o)}</span></button>`).join('')}</div><div id="fb"></div>`;
     document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>answer(b));
     function answer(b){
-      const ok=b.dataset.o===q.c; if(ok)right++; else addWrong(q.k);
+      const ok=b.dataset.o===q.c; let gain=0;
+      if(ok){right++;streak++;gain=xpFor(streak);noteStreak(streak);addXp(gain)}else{streak=0;addWrong(q.k)}
       document.querySelectorAll('.opt').forEach(x=>{x.disabled=true; if(x.dataset.o===q.c)x.classList.add('right'); else if(x===b)x.classList.add('wrong')});
-      document.getElementById('fb').innerHTML=`<div class="fb ${ok?'ok':'bad'}"><b>${ok?'Rätt!':'Inte riktigt.'}</b> ${esc(q.e)}</div><div class="row"><button class="btn" id="nx">${i+1<qs.length?'Nästa fråga →':'Visa resultat'}</button></div>`;
+      document.getElementById('fb').innerHTML=`<div class="fb ${ok?'ok':'bad'}"><b>${ok?'Rätt!':'Inte riktigt.'}</b> ${esc(q.e)}${ok?`<div class="gain">+${gain} XP${streak>=2?' · svit '+streak:''}</div>`:''}</div><div class="row"><button class="btn" id="nx">${i+1<qs.length?'Nästa fråga →':'Visa resultat'}</button></div>`;
       document.getElementById('nx').onclick=()=>{i++; i<qs.length?show():result()};
       document.getElementById('nx').focus();
     }
     window.scrollTo(0,0);
   }
   function result(){
-    if(!S.done.includes(id))S.done.push(id); S.score[id]=[right,qs.length]; save();
-    const pct=right/qs.length, next=AREAS.find(x=>x.id===id+1), ad=allDone();
-    app.innerHTML=`<div class="top"><button class="back" onclick="home()">‹ Hem</button></div>
-    <div class="card"><div class="eyebrow">Område ${id} klart</div><div class="big" style="margin:8px 0">${right} / ${qs.length}</div>
-    <p>${pct===1?'Allt rätt. Vidare!':pct>=.7?'Bra. Titta en extra gång på det du missade.':'Läs texten en gång till innan du går vidare. Fel-frågorna ligger under Repetera.'}</p>
-    <div class="row">${next?`<button class="btn" onclick="area(${next.id})">Nästa område →</button>`:ad?`<button class="btn" onclick="summary()">Till sammanfattningen →</button>`:''}<button class="btn ghost" onclick="area(${id})">Läs igen</button></div></div>`;
-    window.scrollTo(0,0);
+    const n=qs.length, pct=right/n, ok=pct>=PASS, was=passed(id), st0=stars(id), r0=rankIdx();
+    const best=S.score[id]; if(!best||pct>best[0]/best[1])S.score[id]=[right,n];
+    if(ok&&!was)S.done.push(id);
+    const st=stars(id), up=st-st0, bonus=up>0?30*up:0; if(bonus)addXp(bonus); else save();
+    const r=rankIdx(), next=AREAS.find(x=>x.id===id+1), ad=allDone(), need=Math.ceil(PASS*n), c=CARDS[id];
+    let h=`<div class="top"><button class="back" onclick="home()">‹ Hem</button></div><div class="card center">`;
+    if(!ok){
+      h+=`<div class="eyebrow">Område ${id}</div><div class="big" style="margin:8px 0">${right} / ${n}</div>
+      <p>Du behöver minst ${need} rätt för att klara området${was?'':', gå upp en nivå och vinna kortet'}. Läs texten en gång till och försök igen. Fel-frågorna ligger också under Repetera.</p>
+      <div class="row center"><button class="btn" onclick="area(${id})">Läs texten igen</button><button class="btn ghost" onclick="quiz(${id})">Försök igen</button></div>`;
+    }else{
+      h+=r>r0?`<div class="eyebrow">Ny nivå!</div><h2 style="margin-top:6px">Nivå ${r}: ${RANKS[r]}</h2>`
+        :up>0?`<div class="eyebrow">Kortet uppgraderat</div><h2 style="margin-top:6px">${TIERCAP[st]}kort: ${c.name}</h2>`
+        :`<div class="eyebrow">Område ${id} klart</div>`;
+      h+=`<div class="${up>0?'reveal':''}">${card(id,true)}</div><div class="stars">${starStr(st)}</div>
+      <div class="big" style="margin:6px 0 2px">${right} / ${n}</div>${bonus?`<div class="gain">+${bonus} XP kortbonus</div>`:''}
+      <div class="fact"><b>${c.name}:</b> ${c.fact}</div>
+      <p class="tiny">${st===3?'Fullt hus. Kortet är i guld.':st===2?'Guld får du när du klarar området utan ett enda fel.':'Silver vid minst 90 % rätt, guld utan fel. Gör om området när du vill.'}</p>
+      <div class="row center">${next?`<button class="btn" onclick="area(${next.id})">Nästa område →</button>`:ad?`<button class="btn" onclick="summary()">Till sammanfattningen →</button>`:`<button class="btn" onclick="home()">Till hem</button>`}${st<3?`<button class="btn ghost" onclick="quiz(${id})">Satsa på ${TIER[st+1]}</button>`:''}</div>`;
+    }
+    app.innerHTML=h+'</div>'; window.scrollTo(0,0);
   }
   show();
 }
@@ -191,6 +273,7 @@ function examStart(){
   app.innerHTML=`<div class="top"><button class="back" onclick="home()">‹ Hem</button></div>
   <div class="card"><div class="eyebrow">Slutprov</div><h2 style="margin-top:6px">${FS.length} frågor, alla områden</h2>
   <p>Frågorna är nya och kommer i blandad ordning. Du ser inga rätta svar förrän du lämnar in. Du kan hoppa mellan frågorna.</p>
+  <p><b>Minst 90 % rätt gör dig till Kemimästare</b> och ger det sista kortet: guld.</p>
   <div class="row"><button class="btn" onclick="examBegin()">Börja</button></div></div>`;
 }
 function examBegin(){
@@ -213,12 +296,15 @@ function examSubmit(){
   if(answered<n && !E.confirm){E.confirm=true;examShow();document.querySelector('.row').insertAdjacentHTML('beforeend',`<div class="fb bad" style="width:100%">${n-answered} frågor är obesvarade och räknas som fel. Tryck Lämna in igen för att lämna in ändå.</div>`);return}
   let right=0; const per={};
   E.qs.forEach(x=>{const ok=x.ans===x.q.c; if(ok)right++; else addWrong(x.q.k); per[x.q.a]=per[x.q.a]||[0,0]; per[x.q.a][1]++; if(ok)per[x.q.a][0]++});
-  S.exam={right,total:n}; save();
+  if(!S.exam||right/n>S.exam.right/S.exam.total)S.exam={right,total:n};
+  const m=right/n>=MASTER, newM=m&&!S.master; if(m)S.master=true; addXp(10*right);
   const pct=Math.round(100*right/n);
+  const head=newM?`<div class="eyebrow">Högsta nivån!</div><h2 style="margin-top:6px">Nivå 10: Kemimästare</h2><div class="reveal">${card(10,true)}</div><div class="fact"><b>Guld:</b> ${CARDS[10].fact}</div>`:`<div class="eyebrow">Resultat slutprov</div>`;
   app.innerHTML=`<div class="top"><button class="back" onclick="home()">‹ Hem</button></div>
-  <div class="card"><div class="eyebrow">Resultat slutprov</div><div class="big" style="margin:8px 0">${right} / ${n}</div><p>${pct}&nbsp;% rätt. ${pct>=90?'Mycket bra, du kan det här.':pct>=70?'Bra grund. Gå igenom felen under Repetera.':'Läs om de områden som gick sämst och gör provet igen.'}</p>
+  <div class="card ${newM?'center':''}">${head}<div class="big" style="margin:8px 0">${right} / ${n}</div><p>${pct}&nbsp;% rätt. ${m?(newM?'Du är Kemimästare. Du kan det här!':'Mycket bra, du kan det här.'):`Kemimästare kräver minst 90 %. ${pct>=70?'Bra grund. Gå igenom felen under Repetera och gör provet igen.':'Läs om de områden som gick sämst och gör provet igen.'}`}</p>
+  <div class="gain">+${10*right} XP</div>
   <div class="stat">${AREAS.map(a=>`<div><small>${esc(a.short)}</small><b>${per[a.id]?per[a.id][0]+' / '+per[a.id][1]:'–'}</b></div>`).join('')}</div>
-  <div class="row"><button class="btn" onclick="examReview()">Gå igenom svaren</button><button class="btn ghost" onclick="examBegin()">Gör om provet</button></div></div>`;
+  <div class="row ${newM?'center':''}"><button class="btn" onclick="examReview()">Gå igenom svaren</button><button class="btn ghost" onclick="examBegin()">Gör om provet</button></div></div>`;
   window.scrollTo(0,0);
 }
 function examReview(){
@@ -240,9 +326,9 @@ function repeat(){
     app.innerHTML=`<div class="top"><button class="back" onclick="home()">‹ Hem</button><span class="eyebrow">Repetera ${i+1} av ${keys.length} · ${esc(a.short)}</span></div>
     <p class="qtext">${esc(q.q)}</p><div class="opts">${opts.map((o,j)=>`<button class="opt" data-o="${esc(o)}"><b>${L[j]}</b><span>${esc(o)}</span></button>`).join('')}</div><div id="fb"></div>`;
     document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
-      const ok=b.dataset.o===q.c; if(ok)remWrong(q.k);
+      const ok=b.dataset.o===q.c; if(ok){remWrong(q.k);addXp(15)}
       document.querySelectorAll('.opt').forEach(x=>{x.disabled=true;if(x.dataset.o===q.c)x.classList.add('right');else if(x===b)x.classList.add('wrong')});
-      document.getElementById('fb').innerHTML=`<div class="fb ${ok?'ok':'bad'}"><b>${ok?'Rätt, bort från listan.':'Fel, ligger kvar.'}</b> ${esc(q.e)}</div><div class="row"><button class="btn" id="nx">Nästa →</button></div>`;
+      document.getElementById('fb').innerHTML=`<div class="fb ${ok?'ok':'bad'}"><b>${ok?'Rätt, bort från listan.':'Fel, ligger kvar.'}</b> ${esc(q.e)}${ok?'<div class="gain">+15 XP · fel rättat</div>':''}</div><div class="row"><button class="btn" id="nx">Nästa →</button></div>`;
       document.getElementById('nx').onclick=()=>{i++;show()};
     });
     window.scrollTo(0,0);
