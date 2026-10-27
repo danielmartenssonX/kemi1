@@ -13,18 +13,18 @@
 :root{
   --bg:#F5F6F4; --card:#FFFFFF; --fg:#1E2327; --mute:#5E6A72; --line:#D5DAD8;
   --accent:#B5602E; --accent-ink:#FFFFFF; --ok:#1E7A4C; --ok-bg:#E4F2EA; --bad:#B8322C; --bad-bg:#F9E6E4;
-  --lock:#EEF0EE; --tint:#EEF3F1; --bronze:#A8693A; --silver:#8A949B; --gold:#C29A1E;
+  --lock:#EEF0EE; --tint:#EEF3F1; --bronze:#8C5A3C; --silver:#8A949B; --gold:#D9A400;
   --display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
   --body:"Source Sans 3",-apple-system,"Segoe UI",Roboto,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#171B1E; --card:#21262A; --fg:#ECEFEA; --mute:#9BA6AC; --line:#38414A;
   --accent:#D98C5A; --accent-ink:#1A1410; --ok:#6CCB95; --ok-bg:#1E3A2C; --bad:#F08A84; --bad-bg:#432422;
-  --lock:#1C2124; --tint:#262D31; --bronze:#CD8A55; --silver:#B9C2C8; --gold:#E8C547; color-scheme:dark}}
+  --lock:#1C2124; --tint:#262D31; --bronze:#B07A58; --silver:#B9C2C8; --gold:#E8C547; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#171B1E; --card:#21262A; --fg:#ECEFEA; --mute:#9BA6AC; --line:#38414A;
   --accent:#D98C5A; --accent-ink:#1A1410; --ok:#6CCB95; --ok-bg:#1E3A2C; --bad:#F08A84; --bad-bg:#432422;
-  --lock:#1C2124; --tint:#262D31; --bronze:#CD8A55; --silver:#B9C2C8; --gold:#E8C547; color-scheme:dark}
+  --lock:#1C2124; --tint:#262D31; --bronze:#B07A58; --silver:#B9C2C8; --gold:#E8C547; color-scheme:dark}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:18px;line-height:1.5;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:8px 40px}
@@ -49,6 +49,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .area .s{font-size:14px;color:var(--mute)}
 .pill{font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--tint);white-space:nowrap}
 .pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill .st{font-size:15px}
 .prog{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin:12px 0 4px}
 .prog i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
 .read p,.read li{max-width:60ch}
@@ -93,12 +94,13 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .el b{font-family:var(--display);font-size:24px}
 .el span{font-size:10px;color:var(--mute);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .el.off{background:var(--lock);color:var(--mute);border-style:dashed}
-.el.t1{border-color:var(--bronze);background:color-mix(in srgb,var(--bronze) 10%,var(--card))}
+.el.t1{border-color:var(--bronze);background:color-mix(in srgb,var(--bronze) 8%,var(--card))}
 .el.t2{border-color:var(--silver);background:color-mix(in srgb,var(--silver) 14%,var(--card))}
-.el.t3{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 18%,var(--card));box-shadow:0 0 0 2px color-mix(in srgb,var(--gold) 35%,transparent)}
+.el.t3{border-color:var(--gold);background:color-mix(in srgb,var(--gold) 28%,var(--card));box-shadow:0 0 10px color-mix(in srgb,var(--gold) 55%,transparent)}
 .el.big{width:140px;margin:16px auto 6px;border-width:3px;border-radius:16px}
 .el.big b{font-size:52px}.el.big span{font-size:15px}.el.big small{font-size:14px;top:6px;left:10px}
-.stars{color:var(--gold);font-size:24px;letter-spacing:.12em}
+.stars{font-size:26px;letter-spacing:.12em}
+.st{color:var(--gold);letter-spacing:.08em}.st .se{color:var(--mute);opacity:.35}
 .gain{font-family:var(--display);font-weight:700;color:var(--accent);margin-top:6px}
 .fact{background:var(--tint);border-radius:10px;padding:12px 14px;margin:12px 0;text-align:left}
 .reveal{animation:pop .7s cubic-bezier(.2,1.5,.4,1) both}
@@ -149,7 +151,7 @@ function passed(id){return S.done.includes(id)}
 function stars(id){const s=S.score[id];if(!passed(id))return 0;if(!s)return 1;const p=s[0]/s[1];return p===1?3:p>=0.9?2:1}
 function rankIdx(){return S.master?10:Math.min(S.done.length,9)}
 function totalStars(){return AREAS.reduce((n,a)=>n+stars(a.id),0)}
-function starStr(n){return '★'.repeat(n)+'☆'.repeat(3-n)}
+function starStr(n){return `<span class="st" aria-label="${n} av 3 stjärnor">${'★'.repeat(n)}<span class="se">${'★'.repeat(3-n)}</span></span>`}
 function addXp(n){S.xp=(S.xp||0)+n;save()}
 function xpFor(streak){return 10+2*Math.min(streak-1,5)}
 function noteStreak(s){if(s>(S.bestStreak||0)){S.bestStreak=s;save()}}
