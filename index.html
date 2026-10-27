@@ -80,6 +80,8 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .grid button.r{background:var(--ok-bg);border-color:var(--ok)}.grid button.w{background:var(--bad-bg);border-color:var(--bad)}
 .tiny{font-size:14px;color:var(--mute)}
 .link{color:var(--accent);font-weight:600;text-decoration:underline}
+.code{font:inherit;font-size:22px;letter-spacing:.3em;padding:10px 14px;width:9ch;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--fg)}
+.code:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -121,8 +123,18 @@ function home(){
   <button class="area ${ad?'':'locked'}" ${ad?'onclick="examStart()"':'disabled'}><span class="num">★</span><span><span class="t">Slutprov</span><br><span class="s">${FS.length} nya frågor, blandade</span></span><span class="pill">${S.exam?S.exam.right+'/'+S.exam.total:(ad?'Starta':'Låst')}</span></button>
   <button class="area ${S.wrong.length?'':'locked'}" ${S.wrong.length?'onclick="repeat()"':'disabled'}><span class="num">↻</span><span><span class="t">Repetera fel</span><br><span class="s">Frågor du svarat fel på</span></span><span class="pill">${S.wrong.length}</span></button>
   </div>
-  <p class="tiny" style="margin-top:22px">${S.free?'Fri ordning är på. ':'Områdena låses upp i ordning. '}<button class="link" onclick="S.free=!S.free;save();home()">${S.free?'Lås i ordning':'Lås upp alla'}</button> · <button class="link" onclick="resetAll()">Börja om</button></p>`;
+  <p class="tiny" style="margin-top:22px">${S.free?'Fri ordning är på. ':'Områdena låses upp i ordning. '}<button class="link" onclick="${S.free?'S.free=false;save();home()':'unlockAll()'}">${S.free?'Lås i ordning':'Lås upp alla'}</button> · <button class="link" onclick="resetAll()">Börja om</button></p>`;
   app.innerHTML=h; window.scrollTo(0,0);
+}
+/* Fri ordning kräver kod (enkel spärr, syns i källkoden). */
+const UNLOCK_CODE='4321';
+function unlockAll(){
+  app.innerHTML=`<div class="top"><button class="back" onclick="home()">‹ Tillbaka</button></div><div class="card"><h2>Lås upp alla områden</h2><p>Skriv koden för att få gå mellan områdena i valfri ordning.</p>
+  <form id="uf" class="row" style="align-items:center"><input class="code" id="uc" type="password" inputmode="numeric" autocomplete="off" maxlength="8" aria-label="Kod"><button class="btn">Lås upp</button><button type="button" class="btn ghost" onclick="home()">Avbryt</button></form><div id="ue"></div></div>`;
+  const inp=document.getElementById('uc'); inp.focus();
+  document.getElementById('uf').onsubmit=ev=>{ev.preventDefault();
+    if(inp.value.trim()===UNLOCK_CODE){S.free=true;save();home()}
+    else{document.getElementById('ue').innerHTML='<div class="fb bad">Fel kod. Försök igen.</div>';inp.value='';inp.focus()}};
 }
 function resetAll(){
   app.innerHTML=`<div class="top"><button class="back" onclick="home()">‹ Tillbaka</button></div><div class="card"><h2>Börja om från början?</h2><p>Alla resultat och fel-listan raderas.</p><div class="row"><button class="btn" onclick="S={done:[],score:{},wrong:[],free:false,seen:{}};save();home()">Ja, börja om</button><button class="btn ghost" onclick="home()">Avbryt</button></div></div>`;
